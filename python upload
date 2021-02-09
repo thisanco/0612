@@ -1,0 +1,65 @@
+
+import pandas as pd
+import requests
+import io
+import datetime
+import pyodbc
+
+## Get the data from oficial repository
+url = "https://raw.githubusercontent.com/thisanco/vagas/master/data/bi-analysis/data-test-analytics.csv"
+download = requests.get(url).content
+
+server = 'myserver'
+database = 'teste'
+username = 'sa'
+password = '1234'
+driver = '{SQL Server Native Client 11.0}'
+turbodbc_options = 'options'
+timeout = '1'
+
+## I copied and pasted the datrafame results to SQL
+data = pd.read_csv(io.StringIO(download.decode('utf-8')))
+
+#Can be useful to load data to SQL. didn't work with SA Login.
+def carrega_banco():
+    ## Create dataframe
+    data = pd.read_csv(io.StringIO(download.decode('utf-8')))
+    data.columns = 'id','created_at','updated_at','deleted_at','name_hash','email_hash','address_hash','birth_date','status','version','city','state','neighborhood','last_date_purchase','average_ticket','num_items','all_revenue','recency','marketing_source'
+
+
+    for row in data.itertuples():
+        conn = pyodbc.connect(
+            'DRIVER=' + driver + ';SERVER=' + server + ';DATABASE=' + database + ';UID=' + username + ';PWD=' + password + ';TIMEOUT=' + timeout)
+        cursor = conn.cursor()
+        cursor.fast_executemany = True
+        autocommit = True
+
+## PUT YOUR DATABASE AND TABLE TESTS
+        cursor.execute('''
+                      INSERT INTO teste.dbo.pet (id,created_at,updated_at,deleted_at,name_hash,email_hash,address_hash,birth_date,status,version,city,state,neighborhood,last_date_purchase,average_ticket,num_items,all_revenue,recency,marketing_source)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                      ''',
+                       id,
+                       created_at,
+                       updated_at,
+                       deleted_at,
+                       name_hash,
+                       email_hash,
+                       address_hash,
+                       birth_date,
+                       status,
+                       version,
+                       city,
+                       state,
+                       neighborhood,
+                       last_date_purchase,
+                       average_ticket,
+                       num_items,
+                       all_revenue,
+                       recency,
+                       marketing_source
+                       )
+
+        conn.commit()
+
+carrega_banco()
